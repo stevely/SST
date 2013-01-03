@@ -98,6 +98,7 @@ static GLfloat * generateNormals( GLfloat *verts ) {
 
 int main( void ) {
     sstProgram *program;
+    sstDrawableSet *set;
     GLFWwindow window;
     GLfloat *verts, *norms, *proj, *rotY, *rotX, *trans, *scale;
 
@@ -121,16 +122,11 @@ int main( void ) {
     rotX = sstRotateMatrix(0.0f, 0.0f, 1.0f, 0.0f);
     trans = sstTranslateMatrix(0.0f, 0.0f, -10.0f);
     scale = sstScaleMatrix(2.0f, 2.0f, 2.0f);
-    //proj = sstIdentityMatrix4x4();
-    //rotY = sstIdentityMatrix4x4();
-    //rotX = sstIdentityMatrix4x4();
-    //trans = sstIdentityMatrix4x4();
-    //scale = sstIdentityMatrix4x4();
 
     sstActivateProgram(program);
 
-    sstSetInputData(program, "in_Position", verts, TRIANGLE_COUNT);
-    sstSetInputData(program, "in_Normal", norms, TRIANGLE_COUNT);
+    set = sstGenerateDrawableSet(program, TRIANGLE_COUNT, "in_Position", verts,
+                                                          "in_Normal", norms);
     sstSetUniformData(program, "projectionMatrix", proj);
     sstSetUniformData(program, "rotateYMatrix", rotY);
     sstSetUniformData(program, "rotateXMatrix", rotX);
@@ -142,7 +138,7 @@ int main( void ) {
     while( 1 ) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        sstDrawSet(set);
 
         if( sstDisplayErrors() ) {
             break;

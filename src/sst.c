@@ -388,14 +388,10 @@ static void sstAppendInputList( char *name, GLenum type, GLuint components ) {
     in_var_list *result;
     result = (in_var_list*)malloc(sizeof(in_var_list));
     result->value.name = name;
-    result->value.buf_id = 0;
     result->value.location = 0;
     result->value.type = type;
     result->value.size = sstSizeFromEnum(type);
     result->value.components = components;
-    result->value.transpose = GL_TRUE; /* Always transpose for now */
-    result->value.ptr = NULL;
-    result->value.count = 0;
     result->next = NULL;
     if( ins == NULL ) {
         ins = ins_end = result;
@@ -424,7 +420,6 @@ GLuint second, GLuint count ) {
     result->value.first = first;
     result->value.second = second;
     result->value.transpose = GL_TRUE; /* Always transpose for now */
-    result->value.ptr = NULL;
     result->value.count = count;
     result->next = NULL;
     if( uns == NULL ) {
@@ -680,6 +675,8 @@ sstProgram * sstNewProgram( const char **files, int count ) {
     int var_count;
     in_var_list *i;
     uniform_list *u;
+    in_var *in;
+    uniform *un;
     /* Step 1: Create program and parse shaders */
     program = sstCreateProgram(files, count);
     if( !program ) {
@@ -723,7 +720,16 @@ sstProgram * sstNewProgram( const char **files, int count ) {
         free(uns);
     }
     uns = uns_end = NULL;
-    /* Step 5: Return the program object */
+    /* Step 5: Get locations for inputs */
+    for( in = result->inputs; in < result->inputs + result->in_count; in++ ) {
+        in->location = glGetAttribLocation(result->program, in->name);
+    }
+    /* Step 6: Get locations for uniforms */
+    for( un = result->uniforms; un < result->uniforms + result->un_count; un++ )
+    {
+        un->location = glGetUniformLocation(result->program, un->name);
+    }
+    /* Step 7: Return the program object */
     return result;
 }
 
@@ -732,60 +738,86 @@ sstProgram * sstNewProgram( const char **files, int count ) {
  * variables and making the program the active OpenGL program.
  */
 void sstActivateProgram( sstProgram *program ) {
-    GLuint *buffers;
-    in_var *in;
-    uniform *un;
-    int i;
-    /* Step 1: Create buffers for inputs */
-    buffers = (GLuint*)malloc(sizeof(GLuint) * program->in_count);
-    glGenBuffers(program->in_count, buffers);
-    for( i = 0; i < program->in_count; i++ ) {
-        in = &program->inputs[i];
-        in->buf_id = buffers[i];
-        in->location = glGetAttribLocation(program->program, in->name);
-    }
-    /* Step 2: Create vertex array object for the program */
-    glGenVertexArrays(1, &program->vao);
-    glBindVertexArray(program->vao);
-    /* Step 3: Set program as active so we can get the uniform locations */
     glUseProgram(program->program);
-    /* Step 4: Get uniform locations for uniforms */
-    for( i = 0; i < program->un_count; i++ ) {
-        un = &program->uniforms[i];
-        un->location = glGetUniformLocation(program->program, un->name);
-    }
 }
 
 /*
- * Sets the given input variable to the given dataset. The count is the number
- * of items in the dataset relative to its GLSL type. Eg. given an array of six
- * floats representing the dataset for a series of 'vec3' values, count would be
- * 2 because there are 2 'vec3's being passed in.
+ * Generates a drawable set. This function takes in an sstProgram, the number of
+ * component values for the set, and a number of pair values consisting of the
+ * name of an input variable in the program followed by its data.
+ * Note that the count is the number of items in the dataset relative to its
+ * GLSL type. Eg. given an array of six floats representing the dataset for a
+ * series of 'vec3' values, count would be 2 because there are 2 'vec3's being
+ * passed in.
  */
-void sstSetInputData( sstProgram *program, char *name, GLvoid *data,
-int count ) {
-    in_var *in;
-    int i;
-    /* Find our data */
-    for( i = 0; i < program->in_count; i++ ) {
-        in = &program->inputs[i];
-        if( strcmp(in->name, name) == 0 ) {
-            break;
+sstDrawableSet * sstGenerateDrawableSet( sstProgram *program, int count, ... ) {
+    sstDrawableSet *set;
+    sstDrawable *drawable;
+    char *name;
+    void *data;
+    in_var *input;
+    va_list ap;
+    va_start(ap, count);
+    set = (sstDrawableSet*)malloc(sizeof(sstDrawableSet));
+    set->size = program->in_count;
+    set->count = count;
+    /* Step 1: Generate vertex array and bind it */
+    glGenVertexArrays(1, &set->vao);
+    glBindVertexArray(set->vao);
+    /* Step 2: Set up memory for drawables */
+    set->drawables = (sstDrawable*)malloc(sizeof(sstDrawable) * set->size);
+    for( drawable = set->drawables; drawable < set->drawables + set->size;
+         drawable++ ) {
+        glGenBuffers(1, &drawable->buffer);
+        /* Sub-step 1: Find our data */
+        name = va_arg(ap, char*);
+        data = va_arg(ap, void*);
+        for( input = program->inputs; input < program->inputs + program->in_count;
+             input++ ) {
+            /* Found match */
+            if( strcmp(input->name, name) == 0 ) {
+                break;
+            }
         }
+        /* Lookup failure */
+        if( input >= program->inputs + program->in_count ) {
+            printf("ERROR: Input variable [%s] does not exist!\n", name);
+        }
+        /* Sub-step 2: Copy over data */
+        drawable->components = input->components;
+        drawable->location   = input->location;
+        drawable->type       = input->type;
+        /* Sub-step 3: Push data down the pipe */
+        glBindBuffer(GL_ARRAY_BUFFER, drawable->buffer);
+        glBufferData(GL_ARRAY_BUFFER, input->size * input->components * count,
+                     data, GL_STATIC_DRAW);
     }
-    /* Lookup failure */
-    if( i >= program->in_count ) {
-        printf("WARN: Input variable [%s] does not exist!\n", name);
-        return;
+    va_end(ap);
+    /* Step 3: Return drawable set */
+    return set;
+}
+
+/*
+ * Draws the given sstDrawableSet. Assumes the correct program is currently
+ * active.
+ */
+void sstDrawSet( sstDrawableSet *set ) {
+    sstDrawable *d;
+    /* Step 1: Bind our vertex array */
+    glBindVertexArray(set->vao);
+    /* Step 2: Set up and enable all our input attributes */
+    for( d = set->drawables; d < set->drawables + set->size; d++ ) {
+        glBindBuffer(GL_ARRAY_BUFFER, d->buffer);
+        glVertexAttribPointer(d->location, d->components, d->type, GL_FALSE, 0,
+                              0);
+        glEnableVertexAttribArray(d->location);
     }
-    /* Send data to OpenGL */
-    glBindBuffer(GL_ARRAY_BUFFER, in->buf_id);
-    glBufferData(GL_ARRAY_BUFFER, in->size * in->components * count, data,
-                 GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, in->buf_id);
-    glVertexAttribPointer(in->location, in->components, in->type, in->transpose,
-                          0, 0);
-    glEnableVertexAttribArray(in->location);
+    /* Step 3: Draw arrays */
+    glDrawArrays(GL_TRIANGLES, 0, set->count);
+    /* Step 4: Disable input attributes */
+    for( d = set->drawables; d < set->drawables + set->size; d++ ) {
+        glDisableVertexAttribArray(d->location);
+    }
 }
 
 /*

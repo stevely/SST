@@ -72,7 +72,7 @@ GLfloat *dy ) {
     *dy += (y * cosRot) + (x * sinRot);
 }
 
-int mainLoop( GLFWwindow window, sstProgram *program ) {
+int mainLoop( GLFWwindow window, sstProgram *program, sstDrawableSet *set ) {
     GLfloat model[16], temp[16];
     GLfloat x, y, rotx, roty, dx, dy;
     int mX, mY, mXl, mYl;
@@ -83,8 +83,10 @@ int mainLoop( GLFWwindow window, sstProgram *program ) {
     rotx = roty = 0.0f;
     while( 1 ) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        /* Update the look-at values */
         rotx += ((GLfloat) (mX - mXl)) / 25.0f;
         roty += ((GLfloat) (mY - mYl)) / 25.0f;
+        /* Matrix twiddling */
         sstRotateMatrix_(roty, 1.0f, 0.0f, 0.0f, model);
         sstRotateMatrix_(rotx, 0.0f, 1.0f, 0.0f, temp);
         sstMatMult4_(model, temp, model);
@@ -93,8 +95,10 @@ int mainLoop( GLFWwindow window, sstProgram *program ) {
         sstMatMult4_(model, temp, model);
         sstScaleMatrix_(20.0f, 20.0f, 20.0f, temp);
         sstMatMult4_(model, temp, model);
+        /* Set our model uniform and draw */
         sstSetUniformData(program, "modelMatrix", model);
-        glDrawArrays(GL_TRIANGLES, 0, TRIANGLE_COUNT);
+        sstDrawSet(set);
+        /* Check for errors and clean up */
         if( sstDisplayErrors() ) {
             return 1;
         }
@@ -165,6 +169,7 @@ GLFWwindow initialize() {
 
 int dataSetup( GLFWwindow window ) {
     sstProgram *program;
+    sstDrawableSet *set;
     GLfloat *verts, *norms, *proj;
     int result;
     /* Create shader program */
@@ -178,12 +183,16 @@ int dataSetup( GLFWwindow window ) {
     norms = generateNormals(verts);
     proj = sstPerspectiveMatrix(60.0f, 1.0f, 5.0f, 505.0f);
     sstActivateProgram(program);
+    /*
     sstSetInputData(program, "in_Position", verts, TRIANGLE_COUNT);
     sstSetInputData(program, "in_Normal", norms, TRIANGLE_COUNT);
+    */
+    set = sstGenerateDrawableSet(program, TRIANGLE_COUNT, "in_Position", verts,
+                                                          "in_Normal", norms);
     sstSetUniformData(program, "projectionMatrix", proj);
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, 600, 600);
-    result = mainLoop(window, program);
+    result = mainLoop(window, program, set);
     free(verts);
     free(norms);
     free(proj);

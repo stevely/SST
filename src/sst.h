@@ -9,6 +9,7 @@
 /*
  * Stuff from sst.c
  */
+#include <stdarg.h>
 
 /* Needed to get OpenGL 3+ bindings */
 #define GLFW_INCLUDE_GLCOREARB
@@ -16,14 +17,10 @@
 
 typedef struct {
     char *name;
-    GLint buf_id;
     GLint location;
     GLenum type;
     GLuint size; /* Size of component, ie. sizeof(GLFLOAT) */
     GLuint components; /* Number of values per entry, ie. 3 for vec3 */
-    GLboolean transpose; /* Only for matrices */
-    void *ptr; /* Pointer to data */
-    GLuint count;
 } in_var;
 
 typedef struct {
@@ -33,7 +30,6 @@ typedef struct {
     GLuint first; /* Number of columns per entry, ie. 3 for vec3 and mat3 */
     GLuint second; /* For matrices, number of rows. 0 otherwise */
     GLboolean transpose; /* Only for matrices */
-    void *ptr; /* Pointer to data */
     GLuint count;
 } uniform;
 
@@ -45,6 +41,21 @@ typedef struct {
     GLint program; /* Program ID */
     GLuint vao; /* Vertex array object for this program */
 } sstProgram;
+
+typedef struct {
+    GLuint buffer; /* Buffer location */
+    GLint location; /* Attribute location */
+    GLuint components;
+    GLenum type;
+    GLboolean transpose;
+} sstDrawable;
+
+typedef struct {
+    GLuint vao; /* Vertex array object for this set */
+    int count; /* Number of inputs stored in the buffers */
+    int size; /* Number of drawables */
+    sstDrawable *drawables;
+} sstDrawableSet;
 
 /*
  * Displays any OpenGL errors to stdout. Since some of the error types have been
@@ -67,12 +78,21 @@ sstProgram * sstNewProgram( const char **files, int count );
 void sstActivateProgram( sstProgram *program );
 
 /*
- * Sets the given input variable to the given dataset. The count is the number
- * of items in the dataset relative to its GLSL type. Eg. given an array of six
- * floats representing the dataset for a series of 'vec3' values, count would be
- * 2 because there are 2 'vec3's being passed in.
+ * Generates a drawable set. This function takes in an sstProgram, the number of
+ * component values for the set, and a number of pair values consisting of the
+ * name of an input variable in the program followed by its data.
+ * Note that the count is the number of items in the dataset relative to its
+ * GLSL type. Eg. given an array of six floats representing the dataset for a
+ * series of 'vec3' values, count would be 2 because there are 2 'vec3's being
+ * passed in.
  */
-void sstSetInputData( sstProgram *program, char *name, GLvoid *data, int count );
+sstDrawableSet * sstGenerateDrawableSet( sstProgram *program, int count, ... );
+
+/*
+ * Draws the given sstDrawableSet. Assumes the correct program is currently
+ * active.
+ */
+void sstDrawSet( sstDrawableSet *set );
 
 /*
  * Sets the given uniform variable to the given value.

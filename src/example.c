@@ -49,6 +49,7 @@ static const char *shaders[] = {"shaders/simple.vert", "shaders/simple.frag"};
 int main( void ) {
     sstProgram *program;
     GLFWwindow window;
+    sstDrawableSet *set;
 
     if( (window = initialize()) == NULL ) {
         exit(EXIT_FAILURE);
@@ -63,8 +64,8 @@ int main( void ) {
 
     sstActivateProgram(program);
 
-    sstSetInputData(program, "in_Position", positions, 3);
-    sstSetInputData(program, "in_Color", colors, 3);
+    set = sstGenerateDrawableSet(program, 3, "in_Position", positions,
+                                             "in_Color", colors);
     sstSetUniformData(program, "scaleMat", scaleMatrix);
 
     glViewport(0, 0, 600, 600);
@@ -72,7 +73,7 @@ int main( void ) {
     while( 1 ) {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        sstDrawSet(set);
 
         if( sstDisplayErrors() ) {
             break;
