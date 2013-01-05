@@ -626,26 +626,34 @@ skip_realloc:
  * parse, and link each shader to create a final shader program. Returns the ID
  * of the program on success, or 0 otherwise.
  */
-static GLuint sstCreateProgram( const char **files, int count ) {
+static void sstCreateProgram( sstProgram *p, const char **files, int count ) {
     GLuint program, shader;
-    int i;
+    int i, j;
     GLenum type;
     GLint result;
     GLchar *error;
     GLsizei error_length;
+    p->program = 0;
+    p->shader_count = count;
     /* Step 1: Create program */
     program = glCreateProgram();
     if( !program ) {
         printf("Failed to create program!\n");
-        return 0;
+        return;
     }
     /* Step 2: Compile shaders */
+    p->shaders = (GLuint*)malloc(sizeof(GLuint) * count);
     for( i = 0; i < count; i++ ) {
         type = sstGetShaderTypeFromFilepath(files[i]);
         shader = sstCreateShader(type, files[i]);
         if( !shader ) {
-            return 0;
+            for( j = 0; j < i; j++ ) {
+                glDeleteShader(p->shaders[j]);
+            }
+            glDeleteProgram(program);
+            return;
         }
+        p->shaders[i] = shader;
         glAttachShader(program, shader);
     }
     /* Step 3: Link program */
@@ -658,10 +666,14 @@ static GLuint sstCreateProgram( const char **files, int count ) {
         glGetProgramInfoLog(program, error_length, NULL, error);
         printf("%s\n", error);
         free(error);
-        return 0;
+        for( i = 0; i < count; i++ ) {
+            glDeleteShader(p->shaders[i]);
+        }
+        glDeleteProgram(program);
+        return;
     }
     /* Step 4: Return linked program */
-    return program;
+    p->program = program;
 }
 
 /*
@@ -670,22 +682,20 @@ static GLuint sstCreateProgram( const char **files, int count ) {
  * data.
  */
 sstProgram * sstNewProgram( const char **files, int count ) {
-    GLuint program;
     sstProgram *result;
     int var_count;
     in_var_list *i;
     uniform_list *u;
     in_var *in;
     uniform *un;
-    /* Step 1: Create program and parse shaders */
-    program = sstCreateProgram(files, count);
-    if( !program ) {
+    /* Step 1: Create program object */
+    result = (sstProgram*)malloc(sizeof(sstProgram));
+    /* Step 2: Create program and parse shaders */
+    sstCreateProgram(result, files, count);
+    if( !result->program ) {
+        free(result);
         return NULL;
     }
-    /* Step 2: Create program object */
-    result = (sstProgram*)malloc(sizeof(sstProgram));
-    result->program = program;
-    result->vao = 0;
     /* Step 3: Get input and uniform variable counts */
     var_count = 0;
     i = ins;
@@ -972,4 +982,38 @@ void sstSetUniformData( sstProgram *program, char *name, GLvoid *data ) {
         printf("WARN: Invalid first matrix component: %d!\n", un->first);
         return;
     }
+}
+
+/*
+ * Frees the given sstDrawableSet object, deleting with it all related OpenGL
+ * objects.
+ */
+void sstFreeDrawableSet( sstDrawableSet *set ) {
+    sstDrawable *d;
+    /* Step 1: Delete OpenGL objects */
+    glDeleteVertexArrays(1, &set->vao);
+    for( d = set->drawables; d < set->drawables + set->size; d++ ) {
+        glDeleteBuffers(1, &d->buffer);
+    }
+    /* Step 2: Free memory */
+    free(set->drawables);
+    free(set);
+}
+
+/*
+ * Frees the given sstProgram object, deleting with it all related OpenGL
+ * objects.
+ */
+void sstFreeProgram( sstProgram *program ) {
+    int i;
+    /* Step 1: Delete OpenGL objects */
+    for( i = 0; i < program->shader_count; i++ ) {
+        glDeleteShader(program->shaders[i]);
+    }
+    glDeleteProgram(program->program);
+    /* Step 2: Free memory */
+    free(program->inputs);
+    free(program->uniforms);
+    free(program->shaders);
+    free(program);
 }

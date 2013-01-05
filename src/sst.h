@@ -38,8 +38,9 @@ typedef struct {
     int in_count;
     uniform *uniforms;
     int un_count;
-    GLint program; /* Program ID */
-    GLuint vao; /* Vertex array object for this program */
+    GLuint *shaders;
+    int shader_count;
+    GLuint program; /* Program ID */
 } sstProgram;
 
 typedef struct {
@@ -101,6 +102,18 @@ void sstDrawSet( sstDrawableSet *set );
  * are commented out until I can think of a better solution.
  */
 void sstSetUniformData( sstProgram *program, char *name, GLvoid *data );
+
+/*
+ * Frees the given sstDrawableSet object, deleting with it all related OpenGL
+ * objects.
+ */
+void sstFreeDrawableSet( sstDrawableSet *set );
+
+/*
+ * Frees the given sstProgram object, deleting with it all related OpenGL
+ * objects.
+ */
+void sstFreeProgram( sstProgram *program );
 
 /*
  * Helper functions for dealing with matrices and vectors. The memory policy is
