@@ -129,11 +129,11 @@ void      sstIdentityMatrix4x4_( GLfloat *mat );
 GLfloat * sstDupMatrix4x4 ( GLfloat *src );
 void      sstDupMatrix4x4_( GLfloat *src, GLfloat *dst );
 
-GLfloat * sstDupMatrix3x3 ( GLfloat *src );
-void      sstDupMatrix3x3_( GLfloat *src, GLfloat *dst );
-
 GLfloat * sstIdentityMatrix3x3 ();
 void      sstIdentityMatrix3x3_( GLfloat *mat );
+
+GLfloat * sstDupMatrix3x3 ( GLfloat *src );
+void      sstDupMatrix3x3_( GLfloat *src, GLfloat *dst );
 
 GLfloat * sstPerspectiveMatrix ( GLfloat fovy, GLfloat aspect, GLfloat znear,
                                  GLfloat zfar );
