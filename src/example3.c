@@ -73,7 +73,7 @@ GLfloat *dy ) {
 }
 
 int mainLoop( GLFWwindow window, sstProgram *program, sstDrawableSet *set ) {
-    GLfloat model[16], temp[16];
+    GLfloat model1[16], model2[16], temp[16];
     GLfloat x, y, rotx, roty, dx, dy;
     int mX, mY, mXl, mYl;
     x = y = 0.0f;
@@ -87,16 +87,22 @@ int mainLoop( GLFWwindow window, sstProgram *program, sstDrawableSet *set ) {
         rotx += ((GLfloat) (mX - mXl)) / 25.0f;
         roty += ((GLfloat) (mY - mYl)) / 25.0f;
         /* Matrix twiddling */
-        sstRotateMatrix_(roty, 1.0f, 0.0f, 0.0f, model);
+        sstRotateMatrix_(roty, 1.0f, 0.0f, 0.0f, model1);
         sstRotateMatrix_(rotx, 0.0f, 1.0f, 0.0f, temp);
-        sstMatMult4_(model, temp, model);
+        sstMatMult4_(model1, temp, model1);
         rotateMovement(x, y, rotx, &dx, &dy);
         sstTranslateMatrix_(dx, 0.0f, dy, temp);
-        sstMatMult4_(model, temp, model);
+        sstMatMult4_(model1, temp, model1);
         sstScaleMatrix_(20.0f, 20.0f, 20.0f, temp);
-        sstMatMult4_(model, temp, model);
+        sstMatMult4_(model1, temp, model1);
         /* Set our model uniform and draw */
-        sstSetUniformData(program, "modelMatrix", model);
+        sstSetUniformData(program, "modelMatrix", model1);
+        sstDrawSet(set);
+        /* Set up matrices for second cube */
+        sstTranslateMatrix_(0.0f, 0.0f, -5.0f, model2);
+        sstMatMult4_(model1, model2, model2);
+        /* Draw second cube */
+        sstSetUniformData(program, "modelMatrix", model2);
         sstDrawSet(set);
         /* Check for errors and clean up */
         if( sstDisplayErrors() ) {
