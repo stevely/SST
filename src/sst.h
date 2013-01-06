@@ -126,6 +126,12 @@ void sstFreeProgram( sstProgram *program );
 GLfloat * sstIdentityMatrix4x4 ();
 void      sstIdentityMatrix4x4_( GLfloat *mat );
 
+GLfloat * sstDupMatrix4x4 ( GLfloat *src );
+void      sstDupMatrix4x4_( GLfloat *src, GLfloat *dst );
+
+GLfloat * sstDupMatrix3x3 ( GLfloat *src );
+void      sstDupMatrix3x3_( GLfloat *src, GLfloat *dst );
+
 GLfloat * sstIdentityMatrix3x3 ();
 void      sstIdentityMatrix3x3_( GLfloat *mat );
 
@@ -134,15 +140,20 @@ GLfloat * sstPerspectiveMatrix ( GLfloat fovy, GLfloat aspect, GLfloat znear,
 void      sstPerspectiveMatrix_( GLfloat fovy, GLfloat aspect, GLfloat znear,
                                  GLfloat zfar, GLfloat *mat );
 
-GLfloat * sstTranslateMatrix ( GLfloat x, GLfloat y, GLfloat z );
-void      sstTranslateMatrix_( GLfloat x, GLfloat y, GLfloat z, GLfloat *mat );
+GLfloat * sstTranslateMatrix    ( GLfloat x, GLfloat y, GLfloat z );
+void      sstTranslateMatrix_   ( GLfloat x, GLfloat y, GLfloat z, GLfloat *mat );
+void      sstTranslateMatrixInto( GLfloat x, GLfloat y, GLfloat z, GLfloat *mat );
 
-GLfloat * sstRotateMatrix ( GLfloat theta, GLfloat x, GLfloat y, GLfloat z );
-void      sstRotateMatrix_( GLfloat theta, GLfloat x, GLfloat y, GLfloat z,
-                            GLfloat *mat );
+GLfloat * sstRotateMatrix  ( GLfloat theta, GLfloat x, GLfloat y, GLfloat z );
+void      sstRotateMatrix_ ( GLfloat theta, GLfloat x, GLfloat y, GLfloat z,
+                             GLfloat *mat );
+void      sstRotateMatrixX_( GLfloat theta, GLfloat *mat );
+void      sstRotateMatrixY_( GLfloat theta, GLfloat *mat );
+void      sstRotateMatrixZ_( GLfloat theta, GLfloat *mat );
 
-GLfloat * sstScaleMatrix ( GLfloat x, GLfloat y, GLfloat z );
-void      sstScaleMatrix_( GLfloat x, GLfloat y, GLfloat z, GLfloat *mat );
+GLfloat * sstScaleMatrix    ( GLfloat x, GLfloat y, GLfloat z );
+void      sstScaleMatrix_   ( GLfloat x, GLfloat y, GLfloat z, GLfloat *mat );
+void      sstScaleMatrixInto( GLfloat x, GLfloat y, GLfloat z, GLfloat *mat );
 
 GLfloat * sstCrossProduct3 ( GLfloat *v1, GLfloat *v2 );
 void      sstCrossProduct3_( GLfloat *v1, GLfloat *v2, GLfloat *target );

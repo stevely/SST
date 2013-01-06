@@ -80,6 +80,23 @@ void sstIdentityMatrix4x4_( GLfloat *mat ) {
     mat[15] = 1.0f;
 }
 
+GLfloat * sstDupMatrix4x4( GLfloat *src ) {
+    GLfloat *dst;
+    int i;
+    dst = sstGenMatrix4x4();
+    for( i = 0; i < 16; i++ ) {
+        dst[i] = src[i];
+    }
+    return dst;
+}
+
+void sstDupMatrix4x4_( GLfloat *src, GLfloat *dst ) {
+    int i;
+    for( i = 0; i < 16; i++ ) {
+        dst[i] = src[i];
+    }
+}
+
 GLfloat * sstIdentityMatrix3x3() {
     GLfloat *mat;
     mat = sstGenMatrix3x3();
@@ -99,6 +116,23 @@ void sstIdentityMatrix3x3_( GLfloat *mat ) {
     mat[6] = 0.0f;
     mat[7] = 0.0f;
     mat[8] = 1.0f;
+}
+
+GLfloat * sstDupMatrix3x3( GLfloat *src ) {
+    GLfloat *dst;
+    int i;
+    dst = sstGenMatrix3x3();
+    for( i = 0; i < 9; i++ ) {
+        dst[i] = src[i];
+    }
+    return dst;
+}
+
+void sstDupMatrix3x3_( GLfloat *src, GLfloat *dst ) {
+    int i;
+    for( i = 0; i < 9; i++ ) {
+        dst[i] = src[i];
+    }
 }
 
 GLfloat * sstPerspectiveMatrix( GLfloat fovy, GLfloat aspect, GLfloat znear,
@@ -163,6 +197,13 @@ void sstTranslateMatrix_( GLfloat x, GLfloat y, GLfloat z, GLfloat *mat ) {
     mat[15] = 1.0f;
 }
 
+void sstTranslateMatrixInto( GLfloat x, GLfloat y, GLfloat z, GLfloat *mat ) {
+    mat[12] = (mat[ 0] * x) + (mat[ 4] * y) + (mat[ 8] * z) + mat[12];
+    mat[13] = (mat[ 1] * x) + (mat[ 5] * y) + (mat[ 9] * z) + mat[13];
+    mat[14] = (mat[ 2] * x) + (mat[ 6] * y) + (mat[10] * z) + mat[14];
+    mat[15] = (mat[ 3] * x) + (mat[ 7] * y) + (mat[11] * z) + mat[15];
+}
+
 GLfloat * sstRotateMatrix( GLfloat theta, GLfloat x, GLfloat y, GLfloat z ) {
     GLfloat *mat;
     mat = sstGenMatrix4x4();
@@ -189,6 +230,81 @@ GLfloat *mat ) {
     mat[ 8] = x * z * c1 + y * s;
     mat[ 9] = y * z * c1 - x * s;
     mat[10] = z * z * c1 + c;
+    mat[11] = 0.0f;
+    /**/
+    mat[12] = 0.0f;
+    mat[13] = 0.0f;
+    mat[14] = 0.0f;
+    mat[15] = 1.0f;
+}
+
+void sstRotateMatrixX_( GLfloat theta, GLfloat *mat ) {
+    GLfloat c, s;
+    c = cos(theta);
+    s = sin(theta);
+    mat[ 0] = 1.0f;
+    mat[ 1] = 0.0f;
+    mat[ 2] = 0.0f;
+    mat[ 3] = 0.0f;
+    /**/
+    mat[ 4] = 0.0f;
+    mat[ 5] = c;
+    mat[ 6] = s;
+    mat[ 7] = 0.0f;
+    /**/
+    mat[ 8] = 0.0f;
+    mat[ 9] = -s;
+    mat[10] = c;
+    mat[11] = 0.0f;
+    /**/
+    mat[12] = 0.0f;
+    mat[13] = 0.0f;
+    mat[14] = 0.0f;
+    mat[15] = 1.0f;
+}
+
+void sstRotateMatrixY_( GLfloat theta, GLfloat *mat ) {
+    GLfloat c, s;
+    c = cos(theta);
+    s = sin(theta);
+    mat[ 0] = c;
+    mat[ 1] = 0.0f;
+    mat[ 2] = -s;
+    mat[ 3] = 0.0f;
+    /**/
+    mat[ 4] = 0.0f;
+    mat[ 5] = 1.0f;
+    mat[ 6] = 0.0f;
+    mat[ 7] = 0.0f;
+    /**/
+    mat[ 8] = s;
+    mat[ 9] = 0.0f;
+    mat[10] = c;
+    mat[11] = 0.0f;
+    /**/
+    mat[12] = 0.0f;
+    mat[13] = 0.0f;
+    mat[14] = 0.0f;
+    mat[15] = 1.0f;
+}
+
+void sstRotateMatrixZ_( GLfloat theta, GLfloat *mat ) {
+    GLfloat c, s;
+    c = cos(theta);
+    s = sin(theta);
+    mat[ 0] = c;
+    mat[ 1] = s;
+    mat[ 2] = 0.0f;
+    mat[ 3] = 0.0f;
+    /**/
+    mat[ 4] = -s;
+    mat[ 5] = c;
+    mat[ 6] = 0.0f;
+    mat[ 7] = 0.0f;
+    /**/
+    mat[ 8] = 0.0f;
+    mat[ 9] = 0.0f;
+    mat[10] = 1.0f;
     mat[11] = 0.0f;
     /**/
     mat[12] = 0.0f;
@@ -224,6 +340,23 @@ void sstScaleMatrix_( GLfloat x, GLfloat y, GLfloat z, GLfloat *mat ) {
     mat[13] = 0.0f;
     mat[14] = 0.0f;
     mat[15] = 1.0f;
+}
+
+void sstScaleMatrixInto( GLfloat x, GLfloat y, GLfloat z, GLfloat *mat ) {
+    mat[ 0] *= x;
+    mat[ 1] *= x;
+    mat[ 2] *= x;
+    mat[ 3] *= x;
+    /**/
+    mat[ 4] *= y;
+    mat[ 5] *= y;
+    mat[ 6] *= y;
+    mat[ 7] *= y;
+    /**/
+    mat[ 8] *= z;
+    mat[ 9] *= z;
+    mat[10] *= z;
+    mat[11] *= z;
 }
 
 GLfloat * sstCrossProduct3( GLfloat *v1, GLfloat *v2 ) {
