@@ -419,7 +419,7 @@ GLuint second, GLuint count ) {
     result->value.type = type;
     result->value.first = first;
     result->value.second = second;
-    result->value.transpose = GL_TRUE; /* Always transpose for now */
+    result->value.transpose = GL_FALSE; /* Never transpose for now */
     result->value.count = count;
     result->next = NULL;
     if( uns == NULL ) {
