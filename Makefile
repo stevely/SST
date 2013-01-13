@@ -23,13 +23,27 @@ EXAMPLE3_S= example3.c
 
 # SST Sources
 SST_S= sst.c sst_matrix.c
+SST_H= sst.h
+
+# Tarball archive
+SST_AR= sst.tar
 
 # Helper function
 getobjs= $(patsubst %.c,$(BUILD)/%.o,$(1))
+cond_= $(if $(1), $(2) $(1))
+cond= $(call cond_, $(wildcard $(1)), $(2))
 
 # Derivative values
 FWS= $(foreach fw,$(FRAMEWORKS),-framework $(fw))
 LBS= $(foreach lb,$(LIBS),-l$(lb))
+
+package: $(SST_AR)
+
+$(BUILD)/$(SST_H): $(SRC)/$(SST_H) | $(BUILD)
+	cp $^ $@
+
+$(SST_AR): $(call getobjs, $(SST_S)) $(BUILD)/$(SST_H)
+	tar -cf $@ -C$(BUILD) $(notdir $^)
 
 all: $(EXAMPLES)
 
@@ -50,8 +64,10 @@ $(BUILD)/%.o: $(SRC)/%.c | $(BUILD)
 	$(CC) $(CFLAGS) -I $(SRC) -c -o $@ $<
 
 clean:
-	$(if $(wildcard $(BUILD)/*.o), $(RM) $(wildcard $(BUILD)/*.o))
-	$(if $(wildcard $(BUILD)), rmdir $(BUILD))
-	$(if $(wildcard $(EXAMPLES)), $(RM) $(EXAMPLES))
+	$(call cond, $(BUILD)/*.o, $(RM))
+	$(call cond, $(BUILD)/$(SST_H), $(RM))
+	$(call cond, $(BUILD), rmdir)
+	$(call cond, $(EXAMPLES), $(RM))
+	$(call cond, $(SST_AR), $(RM))
 
 .PHONY: clean

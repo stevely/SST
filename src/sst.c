@@ -873,8 +873,7 @@ void sstSetUniformData( sstProgram *program, char *name, GLvoid *data ) {
         case 1:
             switch( un->type ) {
             case GL_FLOAT:
-                glUniformMatrix2fv(un->location, un->count, un->transpose,
-                                   (const GLfloat*)data);
+                glUniform2fv(un->location, un->count, (const GLfloat*)data);
                 return;
 //            case GL_INT:
 //                glUniformMatrix2iv(un->location, un->count, un->transpose,
@@ -910,8 +909,7 @@ void sstSetUniformData( sstProgram *program, char *name, GLvoid *data ) {
         case 1:
             switch( un->type ) {
             case GL_FLOAT:
-                glUniformMatrix3fv(un->location, un->count, un->transpose,
-                                   (const GLfloat*)data);
+                glUniform3fv(un->location, un->count, (const GLfloat*)data);
                 return;
 //            case GL_INT:
 //                glUniformMatrix3iv(un->location, un->count, un->transpose,
@@ -947,8 +945,7 @@ void sstSetUniformData( sstProgram *program, char *name, GLvoid *data ) {
         case 1:
             switch( un->type ) {
             case GL_FLOAT:
-                glUniformMatrix4fv(un->location, un->count, un->transpose,
-                                   (const GLfloat*)data);
+                glUniform4fv(un->location, un->count, (const GLfloat*)data);
                 return;
 //            case GL_INT:
 //                glUniformMatrix4iv(un->location, un->count, un->transpose,

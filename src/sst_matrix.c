@@ -83,6 +83,7 @@ void sstIdentityMatrix4x4_( GLfloat *mat ) {
 GLfloat * sstDupMatrix4x4( GLfloat *src ) {
     GLfloat *dst;
     int i;
+    /* TODO: Use memcpy */
     dst = sstGenMatrix4x4();
     for( i = 0; i < 16; i++ ) {
         dst[i] = src[i];
