@@ -186,12 +186,9 @@ int dataSetup( GLFWwindow window ) {
     norms = generateNormals(verts);
     proj = sstPerspectiveMatrix(60.0f, 1.0f, 5.0f, 505.0f);
     sstActivateProgram(program);
-    /*
-    sstSetInputData(program, "in_Position", verts, TRIANGLE_COUNT);
-    sstSetInputData(program, "in_Normal", norms, TRIANGLE_COUNT);
-    */
-    set = sstGenerateDrawableSet(program, TRIANGLE_COUNT, "in_Position", verts,
-                                                          "in_Normal", norms);
+    set = sstGenerateDrawableSet(program, GL_TRIANGLES, TRIANGLE_COUNT,
+                                 "in_Position", verts,
+                                 "in_Normal", norms);
     sstSetUniformData(program, "projectionMatrix", proj);
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, 600, 600);

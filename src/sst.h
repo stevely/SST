@@ -55,6 +55,7 @@ typedef struct {
     GLuint vao; /* Vertex array object for this set */
     int count; /* Number of inputs stored in the buffers */
     int size; /* Number of drawables */
+    GLenum mode; /* Draw mode, ie. GL_TRIANGLES, GL_QUADS, etc. */
     sstDrawable *drawables;
 } sstDrawableSet;
 
@@ -87,7 +88,8 @@ void sstActivateProgram( sstProgram *program );
  * series of 'vec3' values, count would be 2 because there are 2 'vec3's being
  * passed in.
  */
-sstDrawableSet * sstGenerateDrawableSet( sstProgram *program, int count, ... );
+sstDrawableSet * sstGenerateDrawableSet( sstProgram *program, GLenum mode,
+int count, ... );
 
 /*
  * Draws the given sstDrawableSet. Assumes the correct program is currently

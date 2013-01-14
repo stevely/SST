@@ -760,7 +760,8 @@ void sstActivateProgram( sstProgram *program ) {
  * series of 'vec3' values, count would be 2 because there are 2 'vec3's being
  * passed in.
  */
-sstDrawableSet * sstGenerateDrawableSet( sstProgram *program, int count, ... ) {
+sstDrawableSet * sstGenerateDrawableSet( sstProgram *program, GLenum mode,
+int count, ... ) {
     sstDrawableSet *set;
     sstDrawable *drawable;
     char *name;
@@ -771,6 +772,7 @@ sstDrawableSet * sstGenerateDrawableSet( sstProgram *program, int count, ... ) {
     set = (sstDrawableSet*)malloc(sizeof(sstDrawableSet));
     set->size = program->in_count;
     set->count = count;
+    set->mode = mode;
     /* Step 1: Generate vertex array and bind it */
     glGenVertexArrays(1, &set->vao);
     glBindVertexArray(set->vao);
@@ -823,7 +825,7 @@ void sstDrawSet( sstDrawableSet *set ) {
         glEnableVertexAttribArray(d->location);
     }
     /* Step 3: Draw arrays */
-    glDrawArrays(GL_TRIANGLES, 0, set->count);
+    glDrawArrays(set->mode, 0, set->count);
     /* Step 4: Disable input attributes */
     for( d = set->drawables; d < set->drawables + set->size; d++ ) {
         glDisableVertexAttribArray(d->location);
