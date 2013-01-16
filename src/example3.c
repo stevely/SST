@@ -184,7 +184,6 @@ GLFWwindow initialize() {
 int dataSetup( GLFWwindow window ) {
     sstProgram *program;
     sstDrawableSet *set;
-    //GLfloat *verts, *norms, *proj;
     GLfloat *proj;
     int result;
     /* Create shader program */
@@ -194,17 +193,8 @@ int dataSetup( GLFWwindow window ) {
         return 1;
     }
     /* Set up data */
-    /*
-    verts = generateVertices();
-    norms = generateNormals(verts);
-    */
     proj = sstPerspectiveMatrix(60.0f, 1.0f, 5.0f, 505.0f);
     sstActivateProgram(program);
-    /*
-    set = sstGenerateDrawableSet(program, GL_TRIANGLES, TRIANGLE_COUNT,
-                                 "in_Position", verts,
-                                 "in_Normal", norms);
-    */
     set = sstDrawableSetElements(program, GL_TRIANGLES, 12, triangles,
                                  GL_UNSIGNED_BYTE, 3 * 12,
                                  "in_Position", positions,
@@ -213,10 +203,6 @@ int dataSetup( GLFWwindow window ) {
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, 600, 600);
     result = mainLoop(window, program, set);
-    /*
-    free(verts);
-    free(norms);
-    */
     free(proj);
     return result;
 }
