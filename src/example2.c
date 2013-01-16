@@ -125,7 +125,7 @@ int main( void ) {
 
     sstActivateProgram(program);
 
-    set = sstGenerateDrawableSet(program, GL_TRIANGLES, TRIANGLE_COUNT,
+    set = sstDrawableSetArrays(program, GL_TRIANGLES, TRIANGLE_COUNT,
                                  "in_Position", verts,
                                  "in_Normal", norms);
     sstSetUniformData(program, "projectionMatrix", proj);

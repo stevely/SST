@@ -57,6 +57,9 @@ typedef struct {
     int size; /* Number of drawables */
     GLenum mode; /* Draw mode, ie. GL_TRIANGLES, GL_QUADS, etc. */
     sstDrawable *drawables;
+    int i_size; /* Size of indices, if this is an indexed drawable */
+    GLenum i_type; /* Data type of indices: ubyte, ushort, uint */
+    GLuint i_buffer; /* Buffer location if this is an index drawable, else 0 */
 } sstDrawableSet;
 
 /*
@@ -88,8 +91,11 @@ void sstActivateProgram( sstProgram *program );
  * series of 'vec3' values, count would be 2 because there are 2 'vec3's being
  * passed in.
  */
-sstDrawableSet * sstGenerateDrawableSet( sstProgram *program, GLenum mode,
+sstDrawableSet * sstDrawableSetArrays( sstProgram *program, GLenum mode,
 int count, ... );
+
+sstDrawableSet * sstDrawableSetElements( sstProgram *program, GLenum mode,
+int count, void *indices, GLenum i_type, int i_count, ... );
 
 /*
  * Draws the given sstDrawableSet. Assumes the correct program is currently

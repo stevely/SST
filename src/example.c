@@ -64,9 +64,9 @@ int main( void ) {
 
     sstActivateProgram(program);
 
-    set = sstGenerateDrawableSet(program, GL_TRIANGLES, 3,
-                                 "in_Position", positions,
-                                 "in_Color", colors);
+    set = sstDrawableSetArrays(program, GL_TRIANGLES, 3,
+                              "in_Position", positions,
+                              "in_Color", colors);
     sstSetUniformData(program, "scaleMat", scaleMatrix);
 
     glViewport(0, 0, 600, 600);

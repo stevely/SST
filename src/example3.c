@@ -21,23 +21,33 @@ static GLfloat positions[] = {  1.0f,  1.0f,  1.0f,
                                -1.0f, -1.0f, -1.0f,
                                -1.0f, -1.0f,  1.0f };
 
+static GLfloat normals[] = {  0.577f,  0.577f,  0.577f,
+                              0.577f,  0.577f, -0.577f,
+                             -0.577f,  0.577f, -0.577f,
+                             -0.577f,  0.577f,  0.577f,
+                              0.577f, -0.577f,  0.577f,
+                              0.577f, -0.577f, -0.577f,
+                             -0.577f, -0.577f, -0.577f,
+                             -0.577f, -0.577f,  0.577f };
+
 #define TRIANGLE_COUNT 36
 
-static int triangles[] = { 3, 2, 1,
-                           1, 2, 5,
-                           2, 6, 5,
-                           4, 5, 6,
-                           7, 4, 6,
-                           2, 3, 7,
-                           7, 6, 2,
-                           1, 5, 4,
-                           4, 7, 3,
-                           4, 3, 0,
-                           0, 1, 4,
-                           3, 1, 0 };
+static GLubyte triangles[] = { 3, 2, 1,
+                               1, 2, 5,
+                               2, 6, 5,
+                               4, 5, 6,
+                               7, 4, 6,
+                               2, 3, 7,
+                               7, 6, 2,
+                               1, 5, 4,
+                               4, 7, 3,
+                               4, 3, 0,
+                               0, 1, 4,
+                               3, 1, 0 };
 
 /* Data managing code */
 
+/*
 static GLfloat * generateVertices() {
     GLfloat *result;
     unsigned int i;
@@ -60,6 +70,7 @@ static GLfloat * generateNormals( GLfloat *verts ) {
     }
     return result;
 }
+*/
 
 /* Main loop */
 
@@ -173,7 +184,8 @@ GLFWwindow initialize() {
 int dataSetup( GLFWwindow window ) {
     sstProgram *program;
     sstDrawableSet *set;
-    GLfloat *verts, *norms, *proj;
+    //GLfloat *verts, *norms, *proj;
+    GLfloat *proj;
     int result;
     /* Create shader program */
     program = sstNewProgram(shaders, shader_count);
@@ -182,19 +194,29 @@ int dataSetup( GLFWwindow window ) {
         return 1;
     }
     /* Set up data */
+    /*
     verts = generateVertices();
     norms = generateNormals(verts);
+    */
     proj = sstPerspectiveMatrix(60.0f, 1.0f, 5.0f, 505.0f);
     sstActivateProgram(program);
+    /*
     set = sstGenerateDrawableSet(program, GL_TRIANGLES, TRIANGLE_COUNT,
                                  "in_Position", verts,
                                  "in_Normal", norms);
+    */
+    set = sstDrawableSetElements(program, GL_TRIANGLES, 12, triangles,
+                                 GL_UNSIGNED_BYTE, 3 * 12,
+                                 "in_Position", positions,
+                                 "in_Normal", normals);
     sstSetUniformData(program, "projectionMatrix", proj);
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, 600, 600);
     result = mainLoop(window, program, set);
+    /*
     free(verts);
     free(norms);
+    */
     free(proj);
     return result;
 }

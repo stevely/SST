@@ -760,7 +760,7 @@ void sstActivateProgram( sstProgram *program ) {
  * series of 'vec3' values, count would be 2 because there are 2 'vec3's being
  * passed in.
  */
-sstDrawableSet * sstGenerateDrawableSet( sstProgram *program, GLenum mode,
+sstDrawableSet * sstDrawableSetArrays( sstProgram *program, GLenum mode,
 int count, ... ) {
     sstDrawableSet *set;
     sstDrawable *drawable;
@@ -773,6 +773,10 @@ int count, ... ) {
     set->size = program->in_count;
     set->count = count;
     set->mode = mode;
+    /* Unused values due to this being array-based and not index-based */
+    set->i_size = 0;
+    set->i_type = 0;
+    set->i_buffer = 0;
     /* Step 1: Generate vertex array and bind it */
     glGenVertexArrays(1, &set->vao);
     glBindVertexArray(set->vao);
@@ -786,6 +790,61 @@ int count, ... ) {
         data = va_arg(ap, void*);
         for( input = program->inputs; input < program->inputs + program->in_count;
              input++ ) {
+            /* Found match */
+            if( strcmp(input->name, name) == 0 ) {
+                break;
+            }
+        }
+        /* Lookup failure */
+        if( input >= program->inputs + program->in_count ) {
+            printf("ERROR: Input variable [%s] does not exist!\n", name);
+        }
+        /* Sub-step 2: Copy over data */
+        drawable->components = input->components;
+        drawable->location   = input->location;
+        drawable->type       = input->type;
+        /* Sub-step 3: Push data down the pipe */
+        glBindBuffer(GL_ARRAY_BUFFER, drawable->buffer);
+        glBufferData(GL_ARRAY_BUFFER, input->size * input->components * count,
+                     data, GL_STATIC_DRAW);
+    }
+    va_end(ap);
+    /* Step 3: Return drawable set */
+    return set;
+}
+
+sstDrawableSet * sstDrawableSetElements( sstProgram *program, GLenum mode,
+int count, void *indices, GLenum i_type, int i_count, ... ) {
+    sstDrawableSet *set;
+    sstDrawable *drawable;
+    char *name;
+    void *data;
+    in_var *input;
+    va_list ap;
+    va_start(ap, i_count);
+    set = (sstDrawableSet*)malloc(sizeof(sstDrawableSet));
+    set->size = program->in_count;
+    set->count = count;
+    set->mode = mode;
+    set->i_size = i_count;
+    set->i_type = i_type;
+    /* Step 1: Generate vertex array and bind it */
+    glGenVertexArrays(1, &set->vao);
+    glBindVertexArray(set->vao);
+    /* Step 2: Set up memory for drawables */
+    set->drawables = (sstDrawable*)malloc(sizeof(sstDrawable) * set->size);
+    glGenBuffers(1, &set->i_buffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, set->i_buffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sstSizeFromEnum(i_type) * i_count,
+                 indices, GL_STATIC_DRAW);
+    for( drawable = set->drawables; drawable < set->drawables + set->size;
+         drawable++ ) {
+        glGenBuffers(1, &drawable->buffer);
+        /* Sub-step 1: Find our data */
+        name = va_arg(ap, char*);
+        data = va_arg(ap, void*);
+        for( input = program->inputs; input < program->inputs +
+             program->in_count; input++ ) {
             /* Found match */
             if( strcmp(input->name, name) == 0 ) {
                 break;
@@ -825,7 +884,13 @@ void sstDrawSet( sstDrawableSet *set ) {
         glEnableVertexAttribArray(d->location);
     }
     /* Step 3: Draw arrays */
-    glDrawArrays(set->mode, 0, set->count);
+    if( set->i_buffer != 0 ) {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, set->i_buffer);
+        glDrawElements(set->mode, set->i_size, set->i_type, 0);
+    }
+    else {
+        glDrawArrays(set->mode, 0, set->count);
+    }
     /* Step 4: Disable input attributes */
     for( d = set->drawables; d < set->drawables + set->size; d++ ) {
         glDisableVertexAttribArray(d->location);
