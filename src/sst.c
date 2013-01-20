@@ -617,7 +617,48 @@ skip_realloc:
         free(source[i]);
     }
     free(source);
-    /* Step 4: Return compiled shader */
+    /* Step 5: Return compiled shader */
+    return shader;
+}
+
+/*
+ * Given a shader type and the source of a shader, read in and attempt to
+ * compile a shader rpogram. Will return the ID of the shader program on
+ * success, or 0 if there was an error. Will also attempt to parse the program
+ * for any input or uniform variables to capture.
+ */
+static GLuint sstCreateShaderS( GLenum type, const char *source ) {
+    GLuint shader;
+    GLint result;
+    GLchar *error;
+    GLsizei error_length;
+    /* Step 1: Create empty shader */
+    shader = glCreateShader(type);
+    if( !shader ) {
+        printf("Failed to create shader!\n");
+        return 0;
+    }
+    /* Step 2: Load in shader source */
+    glShaderSource(shader, 1, (const char**)&source, NULL);
+    /* Step 3: Compile shader */
+    glCompileShader(shader);
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &result);
+    if( result == GL_FALSE ) {
+        printf("Failed to compile shader:\n");
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &error_length);
+        error = (GLchar*)malloc(sizeof(GLchar) * error_length);
+        glGetShaderInfoLog(shader, error_length, NULL, error);
+        printf("%s\n", error);
+        free(error);
+        shader = 0;
+    }
+    /* Step 4: Parse shader for input and uniform variables */
+    else {
+        /* We do this step after compiling to let the GLSL compiler catch any
+         * source errors before we try to parse. */
+        sstParseShader(type, (char**)&source, 1);
+    }
+    /* Step 5: Return the compiled shader */
     return shader;
 }
 
@@ -677,8 +718,77 @@ static void sstCreateProgram( sstProgram *p, const char **files, int count ) {
 }
 
 /*
+ * Given an array of shader sources and the sizes of the arrays for vertex and
+ * fragment shaders, attempts to compile, parse, and link each shader to create
+ * a final shader program. Returns the ID of the program on success, or 0
+ * otherwise.
+ */
+static void sstCreateProgramS( sstProgram *p, const char **vertSrcs,
+int vertCount, const char **fragSrcs, int fragCount ) {
+    GLuint program, shader;
+    int i, j;
+    GLint result;
+    GLchar *error;
+    GLsizei error_length;
+    p->program = 0;
+    p->shader_count = vertCount + fragCount;
+    /* Step 1: Create program */
+    program = glCreateProgram();
+    if( !program ) {
+        printf("Failed to create program!\n");
+        return;
+    }
+    /* Step 2: Compile shaders */
+    p->shaders = (GLuint*)malloc(sizeof(GLuint) * (vertCount + fragCount));
+    /* Step 2a: Vertex shaders */
+    for( i = 0; i < vertCount; i++ ) {
+        shader = sstCreateShaderS(GL_VERTEX_SHADER, vertSrcs[i]);
+        if( !shader ) {
+            for( j = 0; j < i; j++ ) {
+                glDeleteShader(p->shaders[j]);
+            }
+            glDeleteProgram(program);
+            return;
+        }
+        p->shaders[i] = shader;
+        glAttachShader(program, shader);
+    }
+    /* Step 2b: Fragment shaders */
+    for( ; i < vertCount + fragCount; i++ ) {
+        shader = sstCreateShaderS(GL_FRAGMENT_SHADER, fragSrcs[i - vertCount]);
+        if( !shader ) {
+            for( j = 0; j < i; j++ ) {
+                glDeleteShader(p->shaders[j]);
+            }
+            glDeleteProgram(program);
+            return;
+        }
+        p->shaders[i] = shader;
+        glAttachShader(program, shader);
+    }
+    /* Step 3: Link program */
+    glLinkProgram(program);
+    glGetProgramiv(program, GL_LINK_STATUS, &result);
+    if( result == GL_FALSE ) {
+        printf("Failed to link program:\n");
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &error_length);
+        error = (GLchar*)malloc(sizeof(GLchar) * error_length);
+        glGetProgramInfoLog(program, error_length, NULL, error);
+        printf("%s\n", error);
+        free(error);
+        for( i = 0; i < vertCount + fragCount; i++ ) {
+            glDeleteShader(p->shaders[i]);
+        }
+        glDeleteProgram(program);
+        return;
+    }
+    /* Step 4: Return linked program */
+    p->program = program;
+}
+
+/*
  * Creates a program object, including compiling and linking the given shader
- * programs, as well as parsing the shader programs and pulling out the relevent
+ * programs, as well as parsing the shader programs and pulling out the relevant
  * data.
  */
 sstProgram * sstNewProgram( const char **files, int count ) {
@@ -692,6 +802,74 @@ sstProgram * sstNewProgram( const char **files, int count ) {
     result = (sstProgram*)malloc(sizeof(sstProgram));
     /* Step 2: Create program and parse shaders */
     sstCreateProgram(result, files, count);
+    if( !result->program ) {
+        free(result);
+        return NULL;
+    }
+    /* Step 3: Get input and uniform variable counts */
+    var_count = 0;
+    i = ins;
+    while( i ) {
+        var_count++;
+        i = i->next;
+    }
+    result->inputs = (in_var*)malloc(sizeof(in_var) * var_count);
+    result->in_count = var_count;
+    var_count = 0;
+    u = uns;
+    while( u ) {
+        var_count++;
+        u = u->next;
+    }
+    result->uniforms = (uniform*)malloc(sizeof(uniform) * var_count);
+    result->un_count = var_count;
+    /* Step 4: Copy over the variables into the new arrays */
+    i = ins;
+    for( var_count = 0; var_count < result->in_count; var_count++ ) {
+        memcpy(&result->inputs[var_count], &i->value, sizeof(in_var));
+        ins = i;
+        i = i->next;
+        free(ins);
+    }
+    ins = ins_end = NULL;
+    u = uns;
+    for( var_count = 0; var_count < result->un_count; var_count++ ) {
+        memcpy(&result->uniforms[var_count], &u->value, sizeof(uniform));
+        uns = u;
+        u = u->next;
+        free(uns);
+    }
+    uns = uns_end = NULL;
+    /* Step 5: Get locations for inputs */
+    for( in = result->inputs; in < result->inputs + result->in_count; in++ ) {
+        in->location = glGetAttribLocation(result->program, in->name);
+    }
+    /* Step 6: Get locations for uniforms */
+    for( un = result->uniforms; un < result->uniforms + result->un_count; un++ )
+    {
+        un->location = glGetUniformLocation(result->program, un->name);
+    }
+    /* Step 7: Return the program object */
+    return result;
+}
+
+/*
+ * Creates a program object, including compiling and linking the given shader
+ * programs, as well as parsing the shader programs and pulling out the relevant
+ * data.
+ */
+sstProgram * sstNewProgramS( const char **vertSrcs, int vertCount,
+const char **fragSrcs, int fragCount ) {
+    sstProgram *result;
+    int var_count;
+    in_var_list *i;
+    uniform_list *u;
+    in_var *in;
+    uniform *un;
+    /* Step 1: Program program object */
+    result = (sstProgram*)malloc(sizeof(sstProgram));
+    /* Step 2: Create program and parse shaders */
+    sstCreateProgramS(result, vertSrcs, vertCount, fragSrcs, fragCount);
     if( !result->program ) {
         free(result);
         return NULL;
@@ -813,6 +991,17 @@ int count, ... ) {
     return set;
 }
 
+/*
+ * Generates an indexed drawable set. This function takes in an sstProgram, the
+ * draw mode, the number of component values for the set, an array of indices
+ * into the input data set, the GL type of the indices, the size of the indices
+ * array, and a number of pair values consisting of the name of an input
+ * variable in the program followed by its data.
+ * Note that the component count is the number of items in the dataset relative
+ * to its GLSL type. Eg. given an array of six floats representing the dataset
+ * for a series of 'vec3' values, count would be 2 because there are 2 'vec3's
+ * being passed in.
+ */
 sstDrawableSet * sstDrawableSetElements( sstProgram *program, GLenum mode,
 int count, void *indices, GLenum i_type, int i_count, ... ) {
     sstDrawableSet *set;

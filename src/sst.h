@@ -77,6 +77,14 @@ GLenum sstDisplayErrors();
 sstProgram * sstNewProgram( const char **files, int count );
 
 /*
+ * Creates a program object, including compiling and linking the given shader
+ * programs, as well as parsing the shader programs and pulling out the relevant
+ * data.
+ */
+sstProgram * sstNewProgramS( const char **vertSrcs, int vertCount,
+const char **fragSrcs, int fragCount );
+
+/*
  * Activates the given program, grabbing all of its input and uniform
  * variables and making the program the active OpenGL program.
  */
@@ -94,6 +102,17 @@ void sstActivateProgram( sstProgram *program );
 sstDrawableSet * sstDrawableSetArrays( sstProgram *program, GLenum mode,
 int count, ... );
 
+/*
+ * Generates an indexed drawable set. This function takes in an sstProgram, the
+ * draw mode, the number of component values for the set, an array of indices
+ * into the input data set, the GL type of the indices, the size of the indices
+ * array, and a number of pair values consisting of the name of an input
+ * variable in the program followed by its data.
+ * Note that the component count is the number of items in the dataset relative
+ * to its GLSL type. Eg. given an array of six floats representing the dataset
+ * for a series of 'vec3' values, count would be 2 because there are 2 'vec3's
+ * being passed in.
+ */
 sstDrawableSet * sstDrawableSetElements( sstProgram *program, GLenum mode,
 int count, void *indices, GLenum i_type, int i_count, ... );
 
