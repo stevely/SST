@@ -204,7 +204,7 @@ static void sstParseMatrix( char *s, GLuint *first, GLuint *second ) {
     case '3':
         *first = 3;
         break;
-    case '5':
+    case '4':
         *first = 4;
         break;
     default:
@@ -1098,9 +1098,6 @@ void sstDrawSet( sstDrawableSet *set ) {
 
 /*
  * Sets the given uniform variable to the given value.
- * DEV NOTE: Some of these functions are only defined in OpenGL versions later
- * than 3.2. Since I can't #ifdef to check their existance ahead of time, they
- * are commented out until I can think of a better solution.
  */
 void sstSetUniformData( sstProgram *program, char *name, GLvoid *data ) {
     uniform *un;
@@ -1120,15 +1117,15 @@ void sstSetUniformData( sstProgram *program, char *name, GLvoid *data ) {
     switch( un->first ) {
     case 1:
         switch( un->type ) {
-//        case GL_FLOAT:
-//            glUniformMatrix1fv(un->location, un->count, (const GLfloat*)data);
-//            return;
-//        case GL_INT:
-//            glUniformMatrix1iv(un->location, un->count, (const GLint*)data);
-//            return;
-//        case GL_UNSIGNED_INT:
-//            glUniformMatrix1uiv(un->location, un->count, (const GLuint*)data);
-//            return;
+        case GL_FLOAT:
+            glUniform1fv(un->location, un->count, (const GLfloat*)data);
+            return;
+        case GL_INT:
+            glUniform1iv(un->location, un->count, (const GLint*)data);
+            return;
+        case GL_UNSIGNED_INT:
+            glUniform1uiv(un->location, un->count, (const GLuint*)data);
+            return;
         default:
             printf("WARN: Invalid type for uniform value [%s]!\n", name);
             return;
@@ -1141,14 +1138,12 @@ void sstSetUniformData( sstProgram *program, char *name, GLvoid *data ) {
             case GL_FLOAT:
                 glUniform2fv(un->location, un->count, (const GLfloat*)data);
                 return;
-//            case GL_INT:
-//                glUniformMatrix2iv(un->location, un->count, un->transpose,
-//                                   (const GLfloat*)data);
-//                return;
-//            case GL_UNSIGNED_INT:
-//                glUniformMatrix2uiv(un->location, un->count, un->transpose,
-//                                    (const GLfloat*)data);
-//                return;
+            case GL_INT:
+                glUniform2iv(un->location, un->count, (const GLint*)data);
+                return;
+            case GL_UNSIGNED_INT:
+                glUniform2uiv(un->location, un->count, (const GLuint*)data);
+                return;
             default:
                 printf("WARN: Invalid type for uniform value [%s]!\n", name);
                 return;
@@ -1177,14 +1172,12 @@ void sstSetUniformData( sstProgram *program, char *name, GLvoid *data ) {
             case GL_FLOAT:
                 glUniform3fv(un->location, un->count, (const GLfloat*)data);
                 return;
-//            case GL_INT:
-//                glUniformMatrix3iv(un->location, un->count, un->transpose,
-//                                   (const GLfloat*)data);
-//                return;
-//            case GL_UNSIGNED_INT:
-//                glUniformMatrix3uiv(un->location, un->count, un->transpose,
-//                                    (const GLfloat*)data);
-//                return;
+            case GL_INT:
+                glUniform3iv(un->location, un->count, (const GLint*)data);
+                return;
+            case GL_UNSIGNED_INT:
+                glUniform3uiv(un->location, un->count, (const GLuint*)data);
+                return;
             default:
                 printf("WARN: Invalid type for uniform value [%s]!\n", name);
                 return;
@@ -1213,14 +1206,12 @@ void sstSetUniformData( sstProgram *program, char *name, GLvoid *data ) {
             case GL_FLOAT:
                 glUniform4fv(un->location, un->count, (const GLfloat*)data);
                 return;
-//            case GL_INT:
-//                glUniformMatrix4iv(un->location, un->count, un->transpose,
-//                                   (const GLfloat*)data);
-//                return;
-//            case GL_UNSIGNED_INT:
-//                glUniformMatrix4uiv(un->location, un->count, un->transpose,
-//                                    (const GLfloat*)data);
-//                return;
+            case GL_INT:
+                glUniform4iv(un->location, un->count, (const GLint*)data);
+                return;
+            case GL_UNSIGNED_INT:
+                glUniform4uiv(un->location, un->count, (const GLuint*)data);
+                return;
             default:
                 printf("WARN: Invalid type for uniform value [%s]!\n", name);
                 return;
