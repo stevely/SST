@@ -204,7 +204,7 @@ static void sstParseMatrix( char *s, GLuint *first, GLuint *second ) {
     case '3':
         *first = 3;
         break;
-    case '4':
+    case '5':
         *first = 4;
         break;
     default:
@@ -273,6 +273,16 @@ static void sstParseType( char *s, GLenum *type, GLuint *first, GLuint *second )
         if( strncmp(s, "mat", 3) == 0 ) {
             *type = GL_FLOAT; /* mat = floats */
             sstParseMatrix(s, first, second);
+        }
+        else {
+            printf("WARN: Unknown data type.\n");
+        }
+        return;
+    case 'f':
+        /* Float */
+        if( strncmp(s, "float", 5) == 0 ) {
+            *type = GL_FLOAT;
+            *first = 1;
         }
         else {
             printf("WARN: Unknown data type.\n");
