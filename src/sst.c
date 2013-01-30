@@ -995,6 +995,9 @@ int count, ... ) {
         glBindBuffer(GL_ARRAY_BUFFER, drawable->buffer);
         glBufferData(GL_ARRAY_BUFFER, input->size * input->components * count,
                      data, GL_STATIC_DRAW);
+        glVertexAttribPointer(drawable->location, drawable->components,
+                              drawable->type, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(drawable->location);
     }
     va_end(ap);
     /* Step 3: Return drawable set */
@@ -1061,6 +1064,9 @@ int count, void *indices, GLenum i_type, int i_count, ... ) {
         glBindBuffer(GL_ARRAY_BUFFER, drawable->buffer);
         glBufferData(GL_ARRAY_BUFFER, input->size * input->components * count,
                      data, GL_STATIC_DRAW);
+        glVertexAttribPointer(drawable->location, drawable->components,
+                              drawable->type, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(drawable->location);
     }
     va_end(ap);
     /* Step 3: Return drawable set */
@@ -1072,27 +1078,14 @@ int count, void *indices, GLenum i_type, int i_count, ... ) {
  * active.
  */
 void sstDrawSet( sstDrawableSet *set ) {
-    sstDrawable *d;
     /* Step 1: Bind our vertex array */
     glBindVertexArray(set->vao);
-    /* Step 2: Set up and enable all our input attributes */
-    for( d = set->drawables; d < set->drawables + set->size; d++ ) {
-        glBindBuffer(GL_ARRAY_BUFFER, d->buffer);
-        glVertexAttribPointer(d->location, d->components, d->type, GL_FALSE, 0,
-                              0);
-        glEnableVertexAttribArray(d->location);
-    }
     /* Step 3: Draw arrays */
     if( set->i_buffer != 0 ) {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, set->i_buffer);
         glDrawElements(set->mode, set->i_size, set->i_type, 0);
     }
     else {
         glDrawArrays(set->mode, 0, set->count);
-    }
-    /* Step 4: Disable input attributes */
-    for( d = set->drawables; d < set->drawables + set->size; d++ ) {
-        glDisableVertexAttribArray(d->location);
     }
 }
 
